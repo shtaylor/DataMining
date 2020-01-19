@@ -1,19 +1,44 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Jan 18 15:13:39 2020
-
-@author: shane
-
-Class to perform Apriori pattern mining
+Created on Jan 19 2020
+@author: Shane Taylor
 """
 
 class Apriori():
+    '''
+    Class to perform Apriori pattern mining. Output format for each line is:
+        support:category1;category2;...
+    
+    Args:
+        data_file_path (str): Path to data file (data should have each entry
+            be a separate row)
+        item_sep (str): What to split each row by into categories
+        rel_minsup (float): Relative minimum support. Default value = 0.01
+        abs_minsup (int): Absolute minimum support. If not set defaults to
+            rel_minsup.
+        
+    Attributes:
+        data_file: File used for reading.
+        minsup (int): Minimum support used in algorithm. Either calculated
+            by rel_minsup * linecount, or directly set by abs_minsup
+        F (list of dict): Used to store all of the frequent frozensets of items
+            where F[k-1][frozenset] = support(frozenset).
+            Ex: Suppose 'Restaurants' is a category in the provided data,
+                and support('Restaurants') = 1024. Then, since our set is
+                length 1, then we can access this info by:
+                F[0][frozenset(['Restaurants'])] == 1024
+                
+    Example:
+        ap = Apriori("categories.txt", item_sep = ';')
+        ap.run()
+        ap.write_output("path/to/output.txt")
+        
+    '''
     def __init__(self, data_file_path: str, item_sep: str = ';', 
                  rel_minsup: float = 0.01, abs_minsup: int = 0):
         self.item_sep = item_sep
-        self.data_file_path = data_file_path
-        self.data_file = open(self.data_file_path)
+        self.data_file = open(data_file_path)
         self.data = []
         linecount = 0
         for line in self.data_file:
@@ -24,6 +49,8 @@ class Apriori():
         else:
             self.minsup = int(rel_minsup * linecount)
         self.F = []
+        
+        
     
     def get_freq_1_itemset(self)->dict:
         counts = {}
@@ -64,7 +91,7 @@ class Apriori():
                         candidate_set.add(candidate)
         return(candidate_set)
         
-    def derive_freq_kplus1_itemsets(self, candidate_set: set):
+    def derive_freq_kplus1_itemsets(self, candidate_set: set)->dict:
         counts = {}
         for candidate in candidate_set:
             for line in self.data:
@@ -89,16 +116,16 @@ class Apriori():
             if len(self.F[k]) == 0:
                 return
     
-    def format_output(self):
+    def format_output(self)->list:
         output = []
         for k_itemset in self.F:
             for itemset in k_itemset:
                 output.append("{}:{}".format(k_itemset[itemset],";".join(itemset)))
         return output
     
-    def write_output(self):
+    def write_output(self, output_filepath: str = 'patterns.txt'):
         output = self.format_output()
-        f = open('patterns.txt', mode='w')
+        f = open(output_filepath, mode='w')
         for entry in output:
             f.write('{}\n'.format(entry))
         f.close()
